@@ -1,0 +1,37 @@
+name: Test configure, build and test presets
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Setup CMake and toolchain
+        run: |
+          bash "$GITHUB_WORKSPACE/tests/fixtures/setup-cmake.sh"
+          rm -rf "$GITHUB_WORKSPACE/tests/fixtures/project/build"
+      - id: action
+        uses: .
+        with:
+          cmakeListsTxtPath: ${{ github.workspace }}/tests/fixtures/project/CMakeLists.txt
+          configurePreset: default
+          buildPreset: default
+          testPreset: default
+      - name: Assert tests ran
+        run: |
+          B="$GITHUB_WORKSPACE/tests/fixtures/project/build/default"
+          if [ ! -x "$B/demo" ]; then
+            echo "FAIL: demo not built"
+            exit 1
+          fi
+          LOG="$B/Testing/Temporary/LastTest.log"
+          if [ ! -f "$LOG" ]; then
+            echo "FAIL: ctest log not found ($LOG)"
+            exit 1
+          fi
+          cat "$LOG"
+          if ! grep -q "demo_runs" "$LOG"; then
+            echo "FAIL: demo_runs test not executed"
+            exit 1
+          fi
+          echo "PASS"

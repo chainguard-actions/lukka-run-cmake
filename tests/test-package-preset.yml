@@ -1,0 +1,34 @@
+name: Test package preset
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Setup CMake and toolchain
+        run: |
+          bash "$GITHUB_WORKSPACE/tests/fixtures/setup-cmake.sh"
+          rm -rf "$GITHUB_WORKSPACE/tests/fixtures/project/build"
+      - id: action
+        uses: .
+        with:
+          cmakeListsTxtPath: ${{ github.workspace }}/tests/fixtures/project/CMakeLists.txt
+          configurePreset: default
+          buildPreset: default
+          packagePreset: default
+      - name: Assert package produced
+        run: |
+          B="$GITHUB_WORKSPACE/tests/fixtures/project/build/default"
+          ls -la "$B"
+          PKG="$(ls "$B"/demo-1.0.0*.tar.gz 2>/dev/null | head -n1)"
+          if [ -z "$PKG" ]; then
+            echo "FAIL: no TGZ package found"
+            exit 1
+          fi
+          echo "package: $PKG"
+          if ! tar -tzf "$PKG" | grep -q 'bin/demo'; then
+            echo "FAIL: package does not contain bin/demo"
+            exit 1
+          fi
+          echo "PASS"
