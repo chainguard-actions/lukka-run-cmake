@@ -1,0 +1,30 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": { "major": 3, "minor": 25, "patch": 0 },
+  "configurePresets": [
+    { "name": "basic", "generator": "Ninja", "binaryDir": "${sourceDir}/build/${presetName}" },
+    { "name": "full", "generator": "Ninja", "binaryDir": "${sourceDir}/build/${presetName}" },
+    { "name": "args", "generator": "Ninja", "binaryDir": "${sourceDir}/build/${presetName}" },
+    { "name": "wf", "generator": "Ninja", "binaryDir": "${sourceDir}/build/${presetName}" }
+  ],
+  "buildPresets": [
+    { "name": "basic", "configurePreset": "basic" },
+    { "name": "full", "configurePreset": "full" },
+    { "name": "args", "configurePreset": "args" },
+    { "name": "wf", "configurePreset": "wf" }
+  ],
+  "testPresets": [
+    { "name": "full", "configurePreset": "full", "output": { "outputOnFailure": true } },
+    { "name": "wf", "configurePreset": "wf", "output": { "outputOnFailure": true } }
+  ],
+  "workflowPresets": [
+    {
+      "name": "wf",
+      "steps": [
+        { "type": "configure", "name": "wf" },
+        { "type": "build", "name": "wf" },
+        { "type": "test", "name": "wf" }
+      ]
+    }
+  ]
+}

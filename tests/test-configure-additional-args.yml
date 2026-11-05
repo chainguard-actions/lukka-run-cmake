@@ -1,0 +1,45 @@
+name: Test configurePresetAdditionalArgs
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Install recent CMake and Ninja
+        run: |
+          set -e
+          if ! command -v pip3 >/dev/null 2>&1 && ! python3 -m pip --version >/dev/null 2>&1; then
+            (sudo apt-get update && sudo apt-get install -y python3-pip) || (apt-get update && apt-get install -y python3-pip)
+          fi
+          python3 -m pip install --user --upgrade cmake ninja \
+            || python3 -m pip install --user --break-system-packages --upgrade cmake ninja
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          "$HOME/.local/bin/cmake" --version
+      - name: Clean build dir
+        run: rm -rf "$GITHUB_WORKSPACE/tests/fixtures/project/build/args"
+      - id: action
+        uses: .
+        with:
+          cmakeListsTxtPath: ${{ github.workspace }}/tests/fixtures/project/CMakeLists.txt
+          configurePreset: args
+          configurePresetAdditionalArgs: "['-DMY_VAR=hello-from-args']"
+          buildPreset: args
+      - name: Assert additional arg was passed to configure
+        run: |
+          B="$GITHUB_WORKSPACE/tests/fixtures/project/build/args"
+          if [ ! -f "$B/myvar.txt" ]; then
+            echo "FAIL: $B/myvar.txt missing"
+            exit 1
+          fi
+          ACTUAL="$(cat "$B/myvar.txt")"
+          echo "actual: $ACTUAL"
+          if [ "$ACTUAL" != "hello-from-args" ]; then
+            echo "FAIL: expected 'hello-from-args'"
+            exit 1
+          fi
+          if [ ! -f "$B/built.txt" ]; then
+            echo "FAIL: build did not run"
+            exit 1
+          fi
+          echo "PASS"
